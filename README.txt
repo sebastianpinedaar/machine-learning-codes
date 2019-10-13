@@ -1,3 +1,1 @@
-Some codes related to Machine Learning models:
-
-* Matriz-Factorization-For-Recommender-Systems.ipynb: implements alternating least sqaure to factorize matrices.
+Implementation from scratch of some Machine Learning/ Deep Learning concepts. 
