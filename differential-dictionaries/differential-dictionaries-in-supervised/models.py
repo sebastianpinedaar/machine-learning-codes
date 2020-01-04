@@ -1,6 +1,6 @@
 from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
 import keras.optimizer as optimizers2
-import tensorflow.keras as keras
+#import tensorflow.keras as keras
 import tensorflow as tf
 #Definition of the Model
 from keras.models import Model
