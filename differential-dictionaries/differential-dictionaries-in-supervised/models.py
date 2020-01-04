@@ -10,10 +10,7 @@ from keras.datasets import cifar10
 from keras.preprocessing import image
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.keras.layers import Layer
-from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import EarlyStopping
-from keras.layers import Activation
 from sklearn.utils import shuffle
 import pickle
 
@@ -171,12 +168,12 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
 
         varkeys_model.compile(loss=custom_loss(varkeys_model.layers[-1], sigma, 1),#keras.losses.categorical_crossentropy,
                     # optimizer=keras.optimizers.SGD(lr=0.1),
-                    optimizer = keras.optimizers.rmsprop(lr=lr, decay=1e-6),
+                    optimizer = optimizers.RMSprop(lr=2e-4),
                     metrics=['accuracy'])
 
         plain_model.compile(loss= keras.losses.categorical_crossentropy,#keras.losses.categorical_crossentropy,
                     # optimizer=keras.optimizers.SGD(lr=0.1),
-                    optimizer = keras.optimizers.rmsprop(lr=lr, decay=1e-6),
+                    optimizer = optimizers.RMSprop(lr=2e-4),
                     metrics=['accuracy'])
 
 
@@ -213,6 +210,16 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
 
         plain_model = Model(inputs=input, outputs=plain_output)
         varkeys_model = Model(inputs=input, outputs=varkeys_output)
+
+        varkeys_model.compile(loss=custom_loss(varkeys_model.layers[-1], sigma, 1),#keras.losses.categorical_crossentropy,
+            # optimizer=keras.optimizers.SGD(lr=0.1),
+            optimizer = keras.optimizers.rmsprop(lr=lr, decay=1e-6),
+            metrics=['accuracy'])
+
+        plain_model.compile(loss= keras.losses.categorical_crossentropy,#keras.losses.categorical_crossentropy,
+                    # optimizer=keras.optimizers.SGD(lr=0.1),
+                    optimizer = keras.optimizers.rmsprop(lr=lr, decay=1e-6),
+                    metrics=['accuracy'])
 
     return varkeys_model, plain_model
 
