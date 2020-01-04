@@ -14,7 +14,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.utils import shuffle
 import pickle
 from keras.models import Model
-
+import keras
 
 class Varkeys(Layer):
 
@@ -170,12 +170,12 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
 
         varkeys_model.compile(loss=custom_loss(varkeys_model.layers[-1], sigma, 1),#keras.losses.categorical_crossentropy,
                     # optimizer=keras.optimizers.SGD(lr=0.1),
-                    optimizer = optimizers.RMSprop(lr=2e-4),
+                    optimizer = keras.optimizers.rmsprop(lr=lr, decay=1e-6),
                     metrics=['accuracy'])
 
         plain_model.compile(loss= keras.losses.categorical_crossentropy,#keras.losses.categorical_crossentropy,
                     # optimizer=keras.optimizers.SGD(lr=0.1),
-                    optimizer = optimizers.RMSprop(lr=2e-4),
+                    optimizer = keras.optimizers.rmsprop(lr=lr, decay=1e-6),
                     metrics=['accuracy'])
 
 
@@ -208,7 +208,7 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
         x = layers.BatchNormalization()(x)
 
         varkeys_output = Varkeys(embedding_dim, n_keys, values, num_classes)(x)
-        plain_output = Activation('softmax')(layers.Dense(num_classes)(x))
+        plain_output = layers.Activation('softmax')(layers.Dense(num_classes)(x))
 
         plain_model = Model(inputs=input, outputs=plain_output)
         varkeys_model = Model(inputs=input, outputs=varkeys_output)
