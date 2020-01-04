@@ -159,7 +159,7 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
         x=layers.Dense(512, activation='relu')(x)
         x=layers.Dropout(0.5)(x)
         x=layers.BatchNormalization()(x)
-        x=layers.Dense(100, activation='relu')(x)
+        x=layers.Dense(embedding_dim, activation='relu')(x)
         x=layers.BatchNormalization()(x)
 
         varkeys_output = Varkeys(embedding_dim, n_keys, values, num_classes)(x)
@@ -209,7 +209,7 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
         x = layers.BatchNormalization()(x)
 
         varkeys_output = Varkeys(embedding_dim, n_keys, values, num_classes)(x)
-        plain_output = Activation('softmax')(Dense(num_classes)(x))
+        plain_output = Activation('softmax')(layers.Dense(num_classes)(x))
 
         plain_model = Model(inputs=input, outputs=plain_output)
         varkeys_model = Model(inputs=input, outputs=varkeys_output)
