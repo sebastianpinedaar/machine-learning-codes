@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.utils import shuffle
 import pickle
+from keras.models import Model
+
 
 class Varkeys(Layer):
 
