@@ -1,4 +1,5 @@
 from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+import keras.optimizer as optimizers2
 import tensorflow.keras as keras
 from tensorflow.keras import models
 from tensorflow.keras import layers
@@ -14,7 +15,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.utils import shuffle
 import pickle
 from keras.models import Model
-import keras.optimizer as optimizers2
+
 
 class Varkeys(Layer):
 
