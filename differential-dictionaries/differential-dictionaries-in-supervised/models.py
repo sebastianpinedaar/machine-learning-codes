@@ -1,9 +1,12 @@
 from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
 import keras.optimizer as optimizers2
 import tensorflow.keras as keras
-from tensorflow.keras import models
-from tensorflow.keras import layers
-from tensorflow.keras import optimizers
+import tensorflow as tf
+#Definition of the Model
+from keras.models import Model
+from keras.layers.normalization import BatchNormalization
+from keras.layers import layers
+import keras
 import tensorflow as tf
 from keras.utils import np_utils
 from keras.models import load_model
