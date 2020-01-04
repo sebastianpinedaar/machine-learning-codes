@@ -138,7 +138,7 @@ def sample_train(x_train, y_train, pct):
     idx = np.arange(n_train)
     np.random.shuffle(idx)
 
-    train_samples = int(train_pct*n_train)
+    train_samples = int(pct*n_train)
     x_train_pct = x_train[idx][:train_samples]
     y_train_pct = y_train[idx][:train_samples]
 
@@ -217,3 +217,17 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
     return varkeys_model, plain_model
 
 
+def print_params(model, embedding_dim, n_keys, values, num_classes, lr, sigma, batch_size, epochs, dataset, input_shape, patience):
+
+    print(  "embedding_dim   =  ", embedding_dim, "\n",
+            "n_keys          =  ", n_keys, "\n",
+            "num_classes     =  ", num_classes, "\n",
+            "batch_size      =  ", batch_size, "\n",
+            "lr              =  ", lr, "\n",
+            "epochs          =  ", epochs, "\n",
+            "sigma           =  ", sigma, "\n",
+            "n_output        =  ", num_classes, "\n",
+            "model           =  ", model, "\n",
+            "dataset         =  ", dataset, "\n",
+            "input_shape     =  ", input_shape, "\n",
+            "patience        =  ", patience)
