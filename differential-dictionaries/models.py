@@ -41,12 +41,12 @@ class Varkeys(Layer):
 
     def call(self, x):
         KV =  tf.matmul(tf.transpose(self.kernel(self.keys, x)), self.values)
-        KV_ = tf.diag(tf.reshape(tf.reciprocal( tf.matmul(KV,tf.ones((self.categories,1)))) , [-1]))
+        KV_ = tf.diag(tf.reshape(tf.reciprocal( tf.matmul(KV,tf.ones((self.num_classes,1)))) , [-1]))
         output = tf.matmul(KV_, KV)
         return output
 
     def compute_output_shape(self, input_shape):
-        return (input_shape[0], self.categories)
+        return (input_shape[0], self.num_classes)
 
     
     def sq_distance(self, A, B):
