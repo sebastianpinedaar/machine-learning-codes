@@ -359,7 +359,7 @@ def construct_model_STL(model, embedding_dim, n_keys_per_class, num_classes, lr,
 
 
 
-def print_params(model, embedding_dim, n_keys, num_classes, lr, sigma, batch_size, epochs, dataset, input_shape, patience):
+def print_params(model, embedding_dim, n_keys_per_class, num_classes, lr, sigma, batch_size, epochs, dataset, input_shape, patience):
 
     print(  "embedding_dim   =  ", embedding_dim, "\n",
             "keys_per_class= =  ", n_keys_per_class, "\n",
