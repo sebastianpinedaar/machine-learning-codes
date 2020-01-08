@@ -1,29 +1,17 @@
 import numpy as np
 
-#values
+import numpy as np
+
 n_keys_per_class = 1
-
-values = np.vstack((np.repeat([[1,0,0,0,0,0,0,0,0,0]], n_keys_per_class, axis=0),
-                    np.repeat([[0,1,0,0,0,0,0,0,0,0]], n_keys_per_class, axis=0),
-                    np.repeat([[0,0,1,0,0,0,0,0,0,0]], n_keys_per_class, axis=0),
-                    np.repeat([[0,0,0,1,0,0,0,0,0,0]], n_keys_per_class, axis=0),
-                    np.repeat([[0,0,0,0,1,0,0,0,0,0]], n_keys_per_class, axis=0),
-                    np.repeat([[0,0,0,0,0,1,0,0,0,0]], n_keys_per_class, axis=0),
-                    np.repeat([[0,0,0,0,0,0,1,0,0,0]], n_keys_per_class, axis=0),
-                    np.repeat([[0,0,0,0,0,0,0,1,0,0]], n_keys_per_class, axis=0),
-                    np.repeat([[0,0,0,0,0,0,0,0,1,0]], n_keys_per_class, axis=0),
-                    np.repeat([[0,0,0,0,0,0,0,0,0,1]], n_keys_per_class, axis=0)))
-
-
 embedding_dim   = 64
-n_keys          = values.shape[0]
-num_classes     = values.shape[1]
-batch_size      = 128
-lr              = 0.0001
-epochs          = 100
-sigma           = 0.01
+num_classes     = 10
+batch_size      = 32
+lr              = 0.00001
+epochs          = 3
+sigma           = 0.01#only for Varkeys
 n_output        = num_classes
-model           = "RESNET"
+model           = "CNN"
 dataset         = "CIFAR-10"
 input_shape     = [32,32,3]
 patience        = 10
+gamma           = 0.1 #only for STL

@@ -1,11 +1,14 @@
 import models as m
-from params import *#model, embedding_dim, n_keys, values, num_classes, lr, sigma, batch_size, epochs, dataset, input_shape, patience
+from params import *
 import automatic_dataset_loader as adl
 
 x_train, x_test, y_train, y_test = adl.load_CIFAR10()
 x_train_pct, y_train_pct = m.sample_train(x_train, y_train, 0.1)
-varkeys_model, plain_model = m.construct_models(model, embedding_dim, n_keys, values, num_classes, lr, sigma)
-m.print_params(model, embedding_dim, n_keys, values, num_classes, lr, sigma, batch_size, epochs, dataset, input_shape, patience)
+m.print_params(model, embedding_dim, n_keys_per_class, num_classes, lr, sigma, batch_size, epochs, dataset, input_shape, patience)
+
+
+varkeys_model, plain_model = m.construct_models(model, embedding_dim, n_keys_per_class, num_classes, lr, sigma)
+#model = construct_model_STL("CNN", embedding_dim, n_keys_per_class, num_classes, lr, gamma)
 
 callbacks = [EarlyStopping(monitor='val_loss', patience=patience)]
 

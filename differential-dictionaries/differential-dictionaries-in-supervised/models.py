@@ -1,26 +1,20 @@
 from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
-#import keras.optimizer as optimizers2
-#import tensorflow.keras as keras
+import tensorflow.keras as keras
+from tensorflow.keras import models
+from tensorflow.keras import layers
+from tensorflow.keras import optimizers
 import tensorflow as tf
-#Definition of the Model
-from keras.models import Model
-from keras.layers.normalization import BatchNormalization
-from keras.layers import layers
-import keras
-import tensorflow as tf
-from keras.utils import np_utils
-from keras.models import load_model
-from keras.datasets import cifar10
-from keras.preprocessing import image
+from tensorflow.keras.models import load_model
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.preprocessing import image
 import numpy as np
 import matplotlib.pyplot as plt
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import EarlyStopping
-from sklearn.utils import shuffle
-import pickle
-from keras.models import Model
 
 
-class Varkeys(Layer):
+class Varkeys_Deprecated(Layer):
 
     def __init__(self, embedding_dim, n_keys, values, num_classes, **kwargs):
 
@@ -84,6 +78,79 @@ class Varkeys(Layer):
     def set_values (self, values):
         self.values =  tf.constant(values, dtype=tf.float32, shape = (self.n_keys, self.num_classes))
 
+class Varkeys(Layer):
+
+    def __init__(self, embedding_dim, n_keys_per_class, num_classes, **kwargs):
+
+        self.output_dim = embedding_dim
+        self.initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.1, seed=None)
+        #self.initializer = keras.initializers.random_uniform([dict_size, keysize],maxval=1)
+        self.num_classes = num_classes
+        self.embedding_dim = embedding_dim 
+        self.n_keys = n_keys_per_class*num_classes
+        self.n_keys_per_class = n_keys_per_class
+        super(Varkeys, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+
+        self.keys = self.add_weight(name='keys', 
+                                    #shape=(self.n_centers, self.emb_size, self.n_classes),
+                                      shape=(self.n_keys_per_class, self.num_classes,  self.embedding_dim),
+                                      initializer=self.initializer,
+                                      trainable=True)     
+
+        super(Varkeys, self).build(input_shape)  # Be sure to call this at the end
+
+    def call(self, x):
+
+        keys2 = tf.reshape(self.keys, (-1, self.embedding_dim))
+        K= self.kernel(keys2, x)
+        inner_logits = tf.transpose(tf.reduce_sum(tf.reshape(K, (self.n_keys_per_class, self.num_classes, -1)), axis=0))
+        sum_inner_logits = tf.reduce_sum(inner_logits, axis=1)
+        output = inner_logits / tf.reshape(sum_inner_logits, (-1, 1))
+
+        return output
+
+    
+    def sq_distance(self, A, B):
+
+        print('im in distance function')
+        row_norms_A = tf.reduce_sum(tf.square(A), axis=1)
+        row_norms_A = tf.reshape(row_norms_A, [-1, 1])  # Column vector.
+
+        row_norms_B = tf.reduce_sum(tf.square(B), axis=1)
+        row_norms_B = tf.reshape(row_norms_B, [1, -1])  # Row vector.
+
+        return row_norms_A - 2 * tf.matmul(A, tf.transpose(B)) + row_norms_B
+
+
+    def kernel (self, A,B):
+
+        print('im in kernel function!!')
+        d = self.sq_distance(A,B)
+        o = tf.reciprocal(d+1)
+        return o
+    
+    def kernel_cos(self, A,B):
+      
+        normalize_A = tf.nn.l2_normalize(A,1)        
+        normalize_B = tf.nn.l2_normalize(B,1)
+        cossim = tf.matmul(normalize_B, tf.transpose(normalize_A))
+        return tf.transpose(cossim)
+      
+    def kernel_gauss(self, A,B):
+
+        d = self.sq_distance(A,B)
+        o = tf.exp(-(d)/100)
+        return o
+
+    def get_keys(self):
+
+        return self.get_weights()[0]
+    
+    def set_keys(self, keys):
+
+        self.set_weights([keys])
 
 class RelaxedSimilarity(Layer):
 
@@ -117,7 +184,8 @@ def custom_loss(layer, sigma=0.01, custom=1):
     def loss(y_true,y_pred):
 
       if(custom==1):
-        return keras.losses.categorical_crossentropy(y_true=y_true, y_pred=y_pred)+sigma*tf.reduce_sum(layer.kernel(layer.keys, layer.keys))# + sigma*tf.reduce_mean(layer.kernel(layer.keys, layer.keys) , axis=-1)
+        flatten_keys = keys2 = tf.reshape(layer.keys, (-1, layer.embedding_dim))
+        return keras.losses.categorical_crossentropy(y_true=y_true, y_pred=y_pred)+sigma*tf.reduce_sum(layer.kernel(flatten_keys, flatten_keys))# + sigma*tf.reduce_mean(layer.kernel(layer.keys, layer.keys) , axis=-1)
       else:
         return keras.losses.categorical_crossentropy(y_true=y_true, y_pred=y_pred)
    
@@ -147,7 +215,7 @@ def sample_train(x_train, y_train, pct):
 
     return x_train_pct, y_train_pct
 
-def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sigma):
+def construct_models (model, embedding_dim, n_keys_per_class, num_classes, lr, sigma):
 
     if model == "RESNET":
 
@@ -165,7 +233,7 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
         x=layers.Dense(embedding_dim, activation='relu')(x)
         x=layers.BatchNormalization()(x)
 
-        varkeys_output = Varkeys(embedding_dim, n_keys, values, num_classes)(x)
+        varkeys_output = Varkeys(embedding_dim, n_keys_per_class, values, num_classes)(x)
         plain_output = layers.Activation('softmax')(layers.Dense(num_classes)(x))
 
         plain_model = Model(inputs=input, outputs=plain_output)
@@ -174,12 +242,12 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
 
         varkeys_model.compile(loss=custom_loss(varkeys_model.layers[-1], sigma, 1),#keras.losses.categorical_crossentropy,
                     # optimizer=keras.optimizers.SGD(lr=0.1),
-                    optimizer = keras.optimizers.rmsprop(lr=lr, decay=1e-6),
+                    optimizer = optimizers.RMSprop(lr=lr),
                     metrics=['accuracy'])
 
         plain_model.compile(loss= keras.losses.categorical_crossentropy,#keras.losses.categorical_crossentropy,
                     # optimizer=keras.optimizers.SGD(lr=0.1),
-                    optimizer = keras.optimizers.rmsprop(lr=lr, decay=1e-6),
+                    optimizer = optimizers.RMSprop(lr=lr),
                     metrics=['accuracy'])
 
 
@@ -211,7 +279,7 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
         x = layers.Activation('relu')(x)
         x = layers.BatchNormalization()(x)
 
-        varkeys_output = Varkeys(embedding_dim, n_keys, values, num_classes)(x)
+        varkeys_output = Varkeys(embedding_dim, n_keys_per_class, num_classes)(x)
         plain_output = layers.Activation('softmax')(layers.Dense(num_classes)(x))
 
         plain_model = Model(inputs=input, outputs=plain_output)
@@ -219,21 +287,82 @@ def construct_models (model, embedding_dim, n_keys, values, num_classes, lr, sig
 
         varkeys_model.compile(loss=custom_loss(varkeys_model.layers[-1], sigma, 1),#keras.losses.categorical_crossentropy,
             # optimizer=keras.optimizers.SGD(lr=0.1),
-            optimizer = optimizers2.rmsprop(lr=lr, decay=1e-6),
+            optimizer = optimizers.RMSprop(lr=lr),
             metrics=['accuracy'])
 
         plain_model.compile(loss= keras.losses.categorical_crossentropy,#keras.losses.categorical_crossentropy,
                     # optimizer=keras.optimizers.SGD(lr=0.1),
-                    optimizer = optimizers2.rmsprop(lr=lr, decay=1e-6),
+                    optimizer = optimizers.RMSprop(lr=lr),
                     metrics=['accuracy'])
 
     return varkeys_model, plain_model
 
 
-def print_params(model, embedding_dim, n_keys, values, num_classes, lr, sigma, batch_size, epochs, dataset, input_shape, patience):
+def construct_model_STL(model, embedding_dim, n_keys_per_class, num_classes, lr, gamma):
+
+
+  if model == "RESNET":
+
+        conv_base = ResNet50(weights='imagenet', include_top=False, input_shape=(200, 200, 3))
+        input = layers.Input(shape=( 32,32,3,))
+        x=layers.UpSampling2D((2,2) )(input)
+        x=layers.UpSampling2D((2,2))(x)
+        x=layers.UpSampling2D((2,2))(x)
+        x=conv_base(x)
+        x=layers.Flatten()(x)
+        x=layers.BatchNormalization()(x)
+        x=layers.Dense(512, activation='relu')(x)
+        x=layers.Dropout(0.5)(x)
+        x=layers.BatchNormalization()(x)
+        x=layers.Dense(embedding_dim, activation='relu')(x)
+        x=layers.BatchNormalization()(x)
+
+        x = RelaxedSimilarity(embedding_dim, n_keys_per_class, num_classes, gamma)(x)
+        output = layers.Softmax()(x)
+        model = Model(inputs=input, outputs=output)
+
+        model.compile(optimizer=optimizers.RMSprop(lr=lr), loss=SoftTripleLoss(model.layers[-2]), metrics=['acc'])
+
+  else:
+        layers_dim=[32, 64, 512]
+        input = layers.Input(shape=( 32,32,3,))
+        x = layers.Conv2D(layers_dim[0], (3, 3), padding='same', input_shape=[32,32,3])(input)
+        x = layers.Activation('relu')(x)
+        x = layers.Conv2D(layers_dim[0], (3,3))(x)
+        x = layers.Activation('relu')(x)
+        x = layers.Conv2D(layers_dim[0], (3, 3))(x)
+        x = layers.Activation('relu')(x)
+        x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+        x = layers.Dropout(0.25)(x)
+
+        x = layers.Conv2D(layers_dim[1], (3, 3), padding='same')(x)
+        x = layers.Activation('relu')(x)
+        x = layers.Conv2D(layers_dim[1], (3, 3))(x)
+        x = layers.Activation('relu')(x)
+        x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+        x = layers.Dropout(0.25)(x)
+
+        x = layers.Flatten()(x)
+        x = layers.Dense(layers_dim[2])(x)
+        x = layers.Activation('relu')(x)
+        x = layers.Dropout(0.5)(x)
+        x = layers.Dense(embedding_dim)(x)
+        x = layers.Activation('relu')(x)
+        x = layers.BatchNormalization()(x)
+
+        x = RelaxedSimilarity(embedding_dim, n_keys_per_class, num_classes, gamma)(x)
+        output = layers.Softmax()(x)
+        model = Model(inputs=input, outputs=output)
+        model.compile(optimizer=optimizers.RMSprop(lr=lr), loss=SoftTripleLoss(model.layers[-2]), metrics=['acc'])
+
+  return model
+
+
+
+def print_params(model, embedding_dim, n_keys, num_classes, lr, sigma, batch_size, epochs, dataset, input_shape, patience):
 
     print(  "embedding_dim   =  ", embedding_dim, "\n",
-            "n_keys          =  ", n_keys, "\n",
+            "keys_per_class= =  ", n_keys_per_class, "\n",
             "num_classes     =  ", num_classes, "\n",
             "batch_size      =  ", batch_size, "\n",
             "lr              =  ", lr, "\n",
@@ -244,3 +373,4 @@ def print_params(model, embedding_dim, n_keys, values, num_classes, lr, sigma, b
             "dataset         =  ", dataset, "\n",
             "input_shape     =  ", input_shape, "\n",
             "patience        =  ", patience)
+    
