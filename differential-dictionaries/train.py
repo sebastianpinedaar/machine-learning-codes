@@ -12,6 +12,16 @@ varkeys_model, plain_model = m.construct_models(model, embedding_dim, n_keys_per
 
 callbacks = [EarlyStopping(monitor='val_loss', patience=patience)]
 
+
+plain_model.fit(x_train_pct, y_train_pct,
+        batch_size=  batch_size,
+        epochs=epochs,
+        verbose=1,
+        validation_data=(x_test, y_test),
+        callbacks = callbacks)
+
+
+
 varkeys_model.fit(x_train_pct, y_train_pct,
         batch_size=  batch_size,
         epochs=epochs,
