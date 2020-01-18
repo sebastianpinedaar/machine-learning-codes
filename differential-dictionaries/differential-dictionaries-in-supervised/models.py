@@ -11,7 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.models import Model
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, ModelCheckpoint
+from pyclustering.cluster.kmedoids import kmedoids
 
 
 class Varkeys_Deprecated(Layer):
@@ -238,7 +239,7 @@ def construct_models (model, embedding_dim, n_keys_per_class, num_classes, lr, s
 
         plain_model = Model(inputs=input, outputs=plain_output)
         varkeys_model = Model(inputs=input, outputs=varkeys_output)
-
+        embeddings = Model(inputs=input, outputs=x)
 
         varkeys_model.compile(loss=custom_loss(varkeys_model.layers[-1], sigma, 1),#keras.losses.categorical_crossentropy,
                     # optimizer=keras.optimizers.SGD(lr=0.1),
@@ -249,7 +250,6 @@ def construct_models (model, embedding_dim, n_keys_per_class, num_classes, lr, s
                     # optimizer=keras.optimizers.SGD(lr=0.1),
                     optimizer = optimizers.RMSprop(lr=lr),
                     metrics=['accuracy'])
-
 
     else:
 
@@ -284,6 +284,7 @@ def construct_models (model, embedding_dim, n_keys_per_class, num_classes, lr, s
 
         plain_model = Model(inputs=input, outputs=plain_output)
         varkeys_model = Model(inputs=input, outputs=varkeys_output)
+        embeddings = Model(inputs=input, outputs=x)
 
         varkeys_model.compile(loss=custom_loss(varkeys_model.layers[-1], sigma, 1),#keras.losses.categorical_crossentropy,
             # optimizer=keras.optimizers.SGD(lr=0.1),
@@ -295,7 +296,7 @@ def construct_models (model, embedding_dim, n_keys_per_class, num_classes, lr, s
                     optimizer = optimizers.RMSprop(lr=lr),
                     metrics=['accuracy'])
 
-    return varkeys_model, plain_model
+    return varkeys_model, plain_model, embeddings
 
 
 def construct_model_STL(model, embedding_dim, n_keys_per_class, num_classes, lr, gamma):
@@ -374,3 +375,31 @@ def print_params(model, embedding_dim, n_keys_per_class, num_classes, lr, sigma,
             "input_shape     =  ", input_shape, "\n",
             "patience        =  ", patience)
     
+def get_initial_weights(embedding, x, y, n_clusters, num_classes, embedding_dim, init_method= "KMEANS", n_init=20, max_iter=200):
+
+
+    embedding_outputs = embedding.predict(x)
+    centers = np.zeros([n_clusters, num_classes, embedding_dim])
+    
+    if init_method=="KMEANS":
+        
+
+        for i in range(num_classes):
+            kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init= n_init, max_iter =max_iter)
+            x_class = embeddings_outputs[np.where(np.argmax(y,1)==i)]
+            centers[:, i, :] = kmeans.fit(x_class).cluster_centers_
+
+    elif init_method =="KMEDOIDS:
+
+        for i in range(num_classes):
+            kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init= n_init, max_iter =max_iter)
+            x_class = embeddings_outputs[np.where(np.argmax(y,1)==i)]
+            cluster = kmedoids(x_class, [1 ,10, 20])
+            centers_idx = cluster.process().get_medoids()
+            centers[:, i, :] = embeddings[centers_idx]
+
+
+    else:
+        raise "Not implemented"
+
+    return centers
