@@ -389,7 +389,7 @@ def get_initial_weights(embedding, x, y, n_clusters, num_classes, embedding_dim,
             x_class = embeddings_outputs[np.where(np.argmax(y,1)==i)]
             centers[:, i, :] = kmeans.fit(x_class).cluster_centers_
 
-    elif init_method =="KMEDOIDS:
+    elif init_method =="KMEDOIDS":
 
         for i in range(num_classes):
             kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init= n_init, max_iter =max_iter)
