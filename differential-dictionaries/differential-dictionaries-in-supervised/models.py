@@ -13,6 +13,7 @@ from tensorflow.keras.layers import Layer
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, ModelCheckpoint
 from pyclustering.cluster.kmedoids import kmedoids
+from sklearn.cluster import KMeans
 
 
 class Varkeys_Deprecated(Layer):
@@ -386,17 +387,17 @@ def get_initial_weights(embedding, x, y, n_clusters, num_classes, embedding_dim,
 
         for i in range(num_classes):
             kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init= n_init, max_iter =max_iter)
-            x_class = embeddings_outputs[np.where(np.argmax(y,1)==i)]
+            x_class = embedding_outputs[np.where(np.argmax(y,1)==i)]
             centers[:, i, :] = kmeans.fit(x_class).cluster_centers_
 
     elif init_method =="KMEDOIDS":
 
         for i in range(num_classes):
-            kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init= n_init, max_iter =max_iter)
-            x_class = embeddings_outputs[np.where(np.argmax(y,1)==i)]
-            cluster = kmedoids(x_class, [1 ,10, 20])
+            x_class = embedding_outputs[np.where(np.argmax(y,1)==i)]
+            initial_medoids = np.random.randint(low=0, high= x_class.shape[0], size=n_clusters)
+            cluster = kmedoids(x_class, initial_medoids)
             centers_idx = cluster.process().get_medoids()
-            centers[:, i, :] = embeddings[centers_idx]
+            centers[:, i, :] = embedding_outputs[centers_idx]
 
 
     else:
