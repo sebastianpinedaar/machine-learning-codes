@@ -234,7 +234,7 @@ def construct_models (model, embedding_dim, n_keys_per_class, num_classes, lr, s
         x=layers.Dense(embedding_dim, activation='relu')(x)
         x=layers.BatchNormalization()(x)
 
-        varkeys_output = Varkeys(embedding_dim, n_keys_per_class, values, num_classes)(x)
+        varkeys_output = Varkeys(embedding_dim, n_keys_per_class, num_classes)(x)
         plain_output = layers.Activation('softmax')(layers.Dense(num_classes)(x))
 
         plain_model = Model(inputs=input, outputs=plain_output)
