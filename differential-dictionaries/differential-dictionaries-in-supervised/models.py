@@ -18,7 +18,7 @@ from sklearn.cluster import KMeans
 
 class Varkeys_Deprecated(Layer):
 
-    def __init__(self, embedding_dim, n_keys, values, num_classes, **kwargs):
+    def __init__(self, embedding_dim, n_keys, values, num_classes, kernel_type,  **kwargs):
 
         self.output_dim = embedding_dim
         self.initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.1, seed=None)
@@ -82,7 +82,7 @@ class Varkeys_Deprecated(Layer):
 
 class Varkeys(Layer):
 
-    def __init__(self, embedding_dim, n_keys_per_class, num_classes, **kwargs):
+    def __init__(self, embedding_dim, n_keys_per_class, num_classes, kernel_type = "inverse", **kwargs):
 
         self.output_dim = embedding_dim
         self.initializer = keras.initializers.TruncatedNormal(mean=0.0, stddev=0.1, seed=None)
@@ -106,7 +106,11 @@ class Varkeys(Layer):
     def call(self, x):
 
         keys2 = tf.reshape(self.keys, (-1, self.embedding_dim))
-        K= self.kernel(keys2, x)
+
+        if (self.kernel_type == "gauss"):
+          K= self.kernel_gauss(keys2, x)
+        else:
+          K= self.kernel(keys2, x)
         inner_logits = tf.transpose(tf.reduce_sum(tf.reshape(K, (self.n_keys_per_class, self.num_classes, -1)), axis=0))
         sum_inner_logits = tf.reduce_sum(inner_logits, axis=1)
         output = inner_logits / tf.reshape(sum_inner_logits, (-1, 1))
@@ -143,7 +147,7 @@ class Varkeys(Layer):
     def kernel_gauss(self, A,B):
 
         d = self.sq_distance(A,B)
-        o = tf.exp(-(d)/100)
+        o = tf.exp(-d)
         return o
 
     def get_keys(self):
@@ -217,7 +221,7 @@ def sample_train(x_train, y_train, pct):
 
     return x_train_pct, y_train_pct
 
-def construct_models (model, embedding_dim, n_keys_per_class, num_classes, lr, sigma):
+def construct_models (model, embedding_dim, n_keys_per_class, num_classes, lr, sigma, kernel_type = "inverse"):
 
     if model == "RESNET":
 
@@ -235,7 +239,7 @@ def construct_models (model, embedding_dim, n_keys_per_class, num_classes, lr, s
         x=layers.Dense(embedding_dim, activation='relu')(x)
         x=layers.BatchNormalization()(x)
 
-        varkeys_output = Varkeys(embedding_dim, n_keys_per_class, num_classes)(x)
+        varkeys_output = Varkeys(embedding_dim, n_keys_per_class, num_classes, kernel_type)(x)
         plain_output = layers.Activation('softmax')(layers.Dense(num_classes)(x))
 
         plain_model = Model(inputs=input, outputs=plain_output)
@@ -280,7 +284,7 @@ def construct_models (model, embedding_dim, n_keys_per_class, num_classes, lr, s
         x = layers.Activation('relu')(x)
         x = layers.BatchNormalization()(x)
 
-        varkeys_output = Varkeys(embedding_dim, n_keys_per_class, num_classes)(x)
+        varkeys_output = Varkeys(embedding_dim, n_keys_per_class, num_classes, kernel_type)(x)
         plain_output = layers.Activation('softmax')(layers.Dense(num_classes)(x))
 
         plain_model = Model(inputs=input, outputs=plain_output)
