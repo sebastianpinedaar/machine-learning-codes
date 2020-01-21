@@ -91,6 +91,7 @@ class Varkeys(Layer):
         self.embedding_dim = embedding_dim 
         self.n_keys = n_keys_per_class*num_classes
         self.n_keys_per_class = n_keys_per_class
+        self.kernel_type = kernel_type
         super(Varkeys, self).__init__(**kwargs)
 
     def build(self, input_shape):
