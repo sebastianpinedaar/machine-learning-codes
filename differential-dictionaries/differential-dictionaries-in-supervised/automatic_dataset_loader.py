@@ -415,3 +415,16 @@ def load_CIFAR10():
     y_test = keras.utils.to_categorical(y_test, num_classes)
 
     return x_train, x_test, y_train, y_test
+
+
+def load_CIFAR100():
+
+    (x_train, y_train), (x_test, y_test) = cifar100.load_data()
+    num_classes = np.max(y_test)+1
+
+    x_train = x_train/255
+    x_test = x_test/255
+    y_train = keras.utils.to_categorical(y_train, num_classes)
+    y_test = keras.utils.to_categorical(y_test, num_classes)
+
+    return x_train, x_test, y_train, y_test

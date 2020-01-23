@@ -148,7 +148,7 @@ class Varkeys(Layer):
     def kernel_gauss(self, A,B):
 
         d = self.sq_distance(A,B)
-        o = tf.exp(-d)
+        o = tf.exp(-d/100)
         return o
 
     def get_keys(self):
