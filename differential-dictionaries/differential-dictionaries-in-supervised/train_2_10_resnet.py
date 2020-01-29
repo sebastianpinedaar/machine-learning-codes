@@ -13,6 +13,7 @@ n_trials = 1
 train_pct = 0.10
 filepath = "model10.h5"
 model = "RESNET"
+num_classes = 10
 
 history = []
 
